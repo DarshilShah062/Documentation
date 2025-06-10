@@ -407,12 +407,17 @@ def show_file_manager():
                     else:
                         st.error("❌ Error processing file")
             
-            # Delete file
+            # Delete file and remove from Pinecone
             if st.button("🗑️ Delete File", type="secondary"):
                 st.warning("Are you sure you want to delete this file?")
                 if st.button("⚠️ Confirm Delete"):
                     try:
+                        # Remove vectors from Pinecone and update status
+                        st.session_state.processor.remove_file_from_index(str(file_path))
+
+                        # Delete the file from disk
                         file_path.unlink()
+
                         st.success("✅ File deleted successfully!")
                         st.rerun()
                     except Exception as e:
