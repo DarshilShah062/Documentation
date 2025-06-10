@@ -409,19 +409,31 @@ def show_file_manager():
             
             # Delete file and remove from Pinecone
             if st.button("🗑️ Delete File", type="secondary"):
+                # Store file path in session state for confirmation on next run
+                st.session_state.delete_target = str(file_path)
+
+            # Show confirmation prompt if this file is marked for deletion
+            if st.session_state.get("delete_target") == str(file_path):
                 st.warning("Are you sure you want to delete this file?")
-                if st.button("⚠️ Confirm Delete"):
-                    try:
-                        # Remove vectors from Pinecone and update status
-                        st.session_state.processor.remove_file_from_index(str(file_path))
+                confirm, cancel = st.columns(2)
+                with confirm:
+                    if st.button("⚠️ Confirm Delete", key="confirm_delete"):
+                        try:
+                            # Remove vectors from Pinecone and update status
+                            st.session_state.processor.remove_file_from_index(str(file_path))
 
-                        # Delete the file from disk
-                        file_path.unlink()
+                            # Delete the file from disk
+                            file_path.unlink()
 
-                        st.success("✅ File deleted successfully!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Error deleting file: {e}")
+                            st.success("✅ File deleted successfully!")
+                            st.session_state.delete_target = None
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Error deleting file: {e}")
+                            st.session_state.delete_target = None
+                with cancel:
+                    if st.button("Cancel", key="cancel_delete"):
+                        st.session_state.delete_target = None
         
         # File content preview
         with st.expander("📄 File Content"):
