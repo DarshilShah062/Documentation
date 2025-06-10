@@ -189,17 +189,21 @@ class DocumentProcessor:
         
         return pd.DataFrame(data)
     
-    def remove_file_from_index(self, file_path: str):
-        """Remove a file's documents from the vector store"""
+    def remove_file_from_index(self, file_path: str) -> bool:
+        """Remove a file's documents from Pinecone and mark as unprocessed."""
         try:
-            # This is a limitation - Pinecone doesn't easily support deletion by metadata
-            # You would need to implement a more sophisticated tracking system
-            print(f"Note: Direct file removal not implemented. Consider recreating index for {file_path}")
-            
-            # Remove from processed files
+            index = self.pc.Index(self.index_name)
+
+            # Delete all vectors that have the source metadata matching this file
+            index.delete(filter={"source": {"$eq": file_path}})
+
+            # Remove entry from processed files so the system knows it needs processing
             if file_path in self.processed_files:
                 del self.processed_files[file_path]
                 self._save_processed_files()
-                
+
+            return True
+
         except Exception as e:
-            print(f"Error removing file: {e}")
+            print(f"Error removing file from index: {e}")
+            return False
